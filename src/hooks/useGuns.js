@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import gunService from '../services/gunService'
 
+const cache = new Map()
+const CACHE_TTL = 30_000
+
 // ---------------------------------------------------------------------------
 // useGuns — fetch the paginated / filtered product list from the API.
 //
@@ -20,10 +23,18 @@ export function useGuns(params = {}) {
 
   const fetchGuns = useCallback(async () => {
     try {
+      const cached = cache.get(paramKey)
+      if (cached && Date.now() - cached.time < CACHE_TTL) {
+        setGuns(cached.data.data || [])
+        setPagination(cached.data.pagination || null)
+        setLoading(false)
+        return
+      }
       setLoading(true)
       setError(null)
 
       const response = await gunService.getGuns(params)
+      cache.set(paramKey, { time: Date.now(), data: response })
 
       if (response.success) {
         setGuns(response.data || [])
@@ -46,6 +57,8 @@ export function useGuns(params = {}) {
 
   return { guns, loading, error, pagination, refetch: fetchGuns }
 }
+
+export const invalidateGunCache = () => cache.clear()
 
 // ---------------------------------------------------------------------------
 // useGunById — fetch a single product by its UUID.

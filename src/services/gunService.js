@@ -47,7 +47,8 @@ export const normalizeProduct = (item) => {
     caliber: item.caliber || 'Standard',
     price: Number(item.price ?? item.cook_time ?? 0),
     description: item.description || '',
-    image_url: item.image_url || item.image || '/guns/pistol.svg',
+    images: Array.isArray(item.images) ? item.images : (item.image_url || item.image ? [item.image_url || item.image] : []),
+    image_url: item.image_url || item.image || item.images?.[0] || '/guns/pistol.svg',
     image: item.image_url || item.image || '/guns/pistol.svg',
     ingredients: specsList,
     steps: stepsList,
@@ -140,7 +141,8 @@ class GunService {
         price: Number(data.price ?? data.cook_time ?? 0),
         description: data.description || '',
         specs: specsArray,
-        image_url: data.image_url || null,
+        image_url: data.image_url || data.images?.[0] || null,
+        images: data.images || (data.image_url ? [data.image_url] : []),
       }
 
       const res = await apiClient.post('/rest/v1/products', payload, {
@@ -175,6 +177,7 @@ class GunService {
       if (data.description !== undefined) payload.description = data.description
       if (specsArray !== undefined) payload.specs = specsArray
       if (data.image_url !== undefined) payload.image_url = data.image_url
+      if (data.images !== undefined) payload.images = data.images
 
       const res = await apiClient.patch(`/rest/v1/products?id=eq.${id}`, payload, {
         headers: { Prefer: 'return=representation' },
@@ -198,7 +201,7 @@ class GunService {
   /**
    * Delete product.
    */
-  async deleteGun(id) {
+  async deleteGun(id, options = {}) {
     if (IS_SUPABASE) {
       await apiClient.delete(`/rest/v1/products?id=eq.${id}`)
       return { success: true }

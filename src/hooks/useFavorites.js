@@ -21,6 +21,7 @@ const readLocalFavs = () => {
 const writeLocalFavs = (ids) => {
   try {
     localStorage.setItem(LOCAL_KEY, JSON.stringify(ids))
+    window.dispatchEvent(new CustomEvent('gunshop:favorites-changed', { detail: ids }))
   } catch {
     /* quota exceeded — silently fail */
   }
@@ -40,30 +41,28 @@ export function useFavorites() {
   const userIdentifier = getUserIdentifier()
 
   const fetchFavorites = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await favoriteService.getFavorites(userIdentifier)
-
-      if (response.success) {
-        setFavorites(response.data || [])
-        setIsLocal(false)
-      } else {
-        throw new Error(response.message)
-      }
-    } catch {
-      // Fallback to localStorage
-      setFavorites(readLocalFavs())
-      setIsLocal(true)
-    } finally {
-      setLoading(false)
-    }
+    setLoading(true)
+    setFavorites(readLocalFavs())
+    setIsLocal(true)
+    setLoading(false)
   }, [userIdentifier])
 
   useEffect(() => {
     fetchFavorites()
   }, [fetchFavorites])
+
+  useEffect(() => {
+    const syncFavorites = (event) => setFavorites(event.detail || readLocalFavs())
+    const syncStorage = (event) => {
+      if (event.key === LOCAL_KEY) setFavorites(readLocalFavs())
+    }
+    window.addEventListener('gunshop:favorites-changed', syncFavorites)
+    window.addEventListener('storage', syncStorage)
+    return () => {
+      window.removeEventListener('gunshop:favorites-changed', syncFavorites)
+      window.removeEventListener('storage', syncStorage)
+    }
+  }, [])
 
   return { favorites, loading, error, isLocal, refetch: fetchFavorites }
 }
@@ -78,34 +77,20 @@ export function useToggleFavorite() {
   const userIdentifier = getUserIdentifier()
 
   const toggleFavorite = async (gunId) => {
+    const current = readLocalFavs()
+    const exists = current.some((id) => String(id) === String(gunId))
+    const next = exists
+      ? current.filter((id) => String(id) !== String(gunId))
+      : [...current, gunId]
+    writeLocalFavs(next)
     try {
       setLoading(true)
       setError(null)
-
-      const response = await favoriteService.toggleFavorite({
-        recipe_id: gunId,
-        user_identifier: userIdentifier,
-      })
-
-      if (response.success) {
-        return response.data
-      }
-      throw new Error(response.message)
-    } catch {
-      // Fallback: toggle in localStorage
-      const current = readLocalFavs()
-      const idx = current.findIndex((id) => String(id) === String(gunId))
-      let isFavorited
-
-      if (idx === -1) {
-        current.push(gunId)
-        isFavorited = true
-      } else {
-        current.splice(idx, 1)
-        isFavorited = false
-      }
-      writeLocalFavs(current)
-      return { is_favorited: isFavorited }
+      // Local state is the responsive source of truth; sync the backend if available.
+      try {
+        await favoriteService.toggleFavorite({ recipe_id: gunId, user_identifier: userIdentifier })
+      } catch { /* favorites remain usable offline */ }
+      return { is_favorited: !exists }
     } finally {
       setLoading(false)
     }

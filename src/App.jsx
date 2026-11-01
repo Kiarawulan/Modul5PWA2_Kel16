@@ -4,6 +4,7 @@ import Footer from './components/Footer.jsx'
 import Catalog from './pages/Catalog.jsx'
 import FavoritesPage from './pages/FavoritesPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
+import EditProfilePage from './pages/EditProfilePage.jsx'
 import CreateGunPage from './pages/CreateGunPage.jsx'
 import EditGunPage from './pages/EditGunPage.jsx'
 import GunDetail from './components/gun/GunDetail.jsx'
@@ -13,12 +14,13 @@ import PWABadge from './components/PWABadge.jsx'
 import ConfirmModal from './components/modals/ConfirmModal.jsx'
 import SplashScreen from './components/common/SplashScreen.jsx'
 import gunService from './services/gunService.js'
+import { invalidateGunCache } from './hooks/useGuns.js'
 import './App.css'
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [tab, setTab] = useState('Catalog')
-  const [mode, setMode] = useState('list') // 'list' | 'create' | 'edit' | 'detail'
+  const [mode, setMode] = useState('list') // 'list' | 'create' | 'edit' | 'detail' | 'profile-edit'
   const [selectedGun, setSelectedGun] = useState(null)
   const [editingGun, setEditingGun] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -71,6 +73,7 @@ function App() {
           <CreateGunPage
             onBack={handleBackToList}
             onSuccess={() => {
+              invalidateGunCache()
               handleBackToList()
               setTab('Catalog')
             }}
@@ -83,11 +86,13 @@ function App() {
             gunId={editingGun?.id}
             onBack={handleBackToList}
             onSuccess={() => {
+              invalidateGunCache()
               handleBackToList()
               setTab('Catalog')
             }}
           />
         )}
+      {mode === 'profile-edit' && <EditProfilePage onBack={() => setMode('list')} />}
 
         {mode === 'detail' && selectedGun && (
           <GunDetail
@@ -113,7 +118,7 @@ function App() {
               />
             )}
             {tab === 'Profile' && (
-              <ProfilePage onReplaySplash={() => setShowSplash(true)} />
+              <ProfilePage onReplaySplash={() => setShowSplash(true)} onEditProfile={() => setMode('profile-edit')} onEditDraft={() => handleNavigate('Create')} />
             )}
             {tab === 'About' && <About />}
             {tab === 'Contact' && <Contact />}
@@ -124,16 +129,17 @@ function App() {
       {/* Global Delete Confirmation */}
       <ConfirmModal
         open={Boolean(deleteTarget)}
-        title="Delete Hardware Record"
-        message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title="Archive Catalog Item"
+        message={`Arsipkan "${deleteTarget?.name}"? Item dapat dipulihkan dari arsip.`}
+        confirmLabel="Archive"
         danger
         loading={deleting}
         onConfirm={async () => {
           if (!deleteTarget) return
           try {
             setDeleting(true)
-            await gunService.deleteGun(deleteTarget.id)
+            const archivedItems = JSON.parse(localStorage.getItem('gunshop_archived') || '[]')
+            localStorage.setItem('gunshop_archived', JSON.stringify([...archivedItems.filter((g) => String(g.id) !== String(deleteTarget.id)), deleteTarget]))
             setDeleteTarget(null)
             handleBackToList()
             setTab('Catalog')

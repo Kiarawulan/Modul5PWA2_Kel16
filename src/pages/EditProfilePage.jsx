@@ -1,0 +1,6 @@
+import { useState } from 'react'
+import userService from '../services/userService'
+export default function EditProfilePage({ onBack }) {
+ const initial=userService.getUserProfile(); const [username,setUsername]=useState(initial.username||'Shooter'); const [bio,setBio]=useState(initial.bio||''); const [phone,setPhone]=useState(localStorage.getItem('gunshop_whatsapp')||'');
+ return <section className="form-page"><button className="detail-back" onClick={onBack}>← Back to profile</button><h1 className="display">Edit Profile</h1><form className="profile-form" onSubmit={(e)=>{e.preventDefault();userService.saveUserProfile({...initial,username,bio});localStorage.setItem('gunshop_profile',JSON.stringify({...initial,username,bio}));localStorage.setItem('gunshop_whatsapp',phone);onBack()}}><label className="form-label">Nama<input className="form-input" value={username} onChange={e=>setUsername(e.target.value)}/></label><label className="form-label">About<textarea className="form-textarea" value={bio} onChange={e=>setBio(e.target.value)}/></label><label className="form-label">Nomor WhatsApp penjual<input className="form-input" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="628123456789"/></label><button className="btn btn--primary">Simpan profil</button></form></section>
+}

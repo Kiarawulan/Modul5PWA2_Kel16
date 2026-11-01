@@ -42,8 +42,10 @@ export default function FavoritesPage({ onSelectGun, onNavigateCatalog }) {
     const seen = new Set()
 
     favorites.forEach((fav) => {
-      const id = fav.id || fav.recipe_id || fav.gun_id
-      const match = allKnownGuns.get(id) || allKnownGuns.get(fav.name) || (fav.name ? fav : null)
+      const id = typeof fav === 'object' && fav !== null
+        ? (fav.id ?? fav.product_id ?? fav.recipe_id ?? fav.gun_id)
+        : fav
+      const match = allKnownGuns.get(id) || allKnownGuns.get(String(id)) || (fav?.name ? fav : null)
       if (match && !seen.has(match.id || match.name)) {
         seen.add(match.id || match.name)
         resolved.push(match)

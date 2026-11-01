@@ -1,4 +1,5 @@
 import FavoriteButton from '../common/FavoriteButton'
+import { ShoppingCart, Share2, ArchiveRestore, Trash2 } from 'lucide-react'
 import { formatPrice, truncate } from '../../utils/helpers'
 
 /**
@@ -10,8 +11,8 @@ import { formatPrice, truncate } from '../../utils/helpers'
  * @param {Function} [props.onEdit]  — called when Edit is clicked (admin)
  * @param {Function} [props.onDelete]— called when Delete is clicked (admin)
  */
-export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
-  const imgSrc = gun.image_url || gun.image || '/guns/pistol.svg'
+export default function GunCard({ gun, onSelect, onEdit, onDelete, onCart, archived, onRestore, onPermanentDelete }) {
+  const imgSrc = (gun.images?.[0] || gun.image_url || gun.image || '/guns/pistol.svg')
   const category = gun.type || gun.category || '—'
   const caliber = gun.caliber || gun.difficulty || ''
   const price = gun.price ?? gun.cook_time ?? 0
@@ -50,6 +51,9 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
       {/* Floating actions row */}
       <div className="card-actions">
         <FavoriteButton gunId={gun.id || gun.name} />
+        {onCart && <button type="button" className="card-act-btn" title="Add to cart" onClick={() => onCart(gun)}><ShoppingCart size={16}/></button>}
+        <button type="button" className="card-act-btn" title="Share unique link" onClick={() => { const url = new URL(window.location.href); url.searchParams.set('gun', gun.id); navigator.clipboard?.writeText(url.toString()); alert('Unique product link copied') }}><Share2 size={16}/></button>
+        {archived && <><button type="button" className="card-act-btn" onClick={onRestore} title="Restore"><ArchiveRestore size={16}/></button><button type="button" className="card-act-btn card-act-btn--danger" onClick={onPermanentDelete} title="Delete permanently"><Trash2 size={16}/></button></>}
 
         {onEdit && (
           <button

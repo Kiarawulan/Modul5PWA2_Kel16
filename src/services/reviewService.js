@@ -18,7 +18,7 @@ class ReviewService {
         ? data.map((r) => ({
             id: r.id,
             product_id: r.product_id,
-            user_identifier: r.user_id ? `Operator ${String(r.user_id).substring(0, 8)}` : 'Anonymous',
+            user_identifier: r.user_id || 'Anonymous',
             rating: r.rating,
             comment: r.comment || '',
             created_at: r.created_at,
