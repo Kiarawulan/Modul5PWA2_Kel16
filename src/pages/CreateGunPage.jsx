@@ -46,6 +46,8 @@ export default function CreateGunPage({ onBack, onSuccess }) {
   const [imagePreview, setImagePreview] = useState(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState('')
   const [uploadedImages, setUploadedImages] = useState([])
+  const [additionalFiles, setAdditionalFiles] = useState([])
+  const [additionalPreviews, setAdditionalPreviews] = useState([])
 
   // Specifications (ingredients in API)
   const [specs, setSpecs] = useState([
@@ -184,6 +186,42 @@ export default function CreateGunPage({ onBack, onSuccess }) {
       // Allow fallback to image preview so the user can continue even if MinIO bucket is unreachable
       setUploadedImageUrl(imagePreview || '/guns/pistol.svg')
       setCurrentStep('form')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleAdditionalImageSelect = (e) => {
+    const files = [...(e.target.files || [])]
+    if (files.some((file) => file.size > 5 * 1024 * 1024)) {
+      setError('Setiap gambar harus berukuran maksimal 5MB.')
+      return
+    }
+    if (files.some((file) => !['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type))) {
+      setError('Format yang diizinkan: JPG, PNG, atau WebP.')
+      return
+    }
+    setAdditionalFiles(files)
+    setAdditionalPreviews(files.map((file) => URL.createObjectURL(file)))
+    setError('')
+    e.target.value = ''
+  }
+
+  const handleUploadAdditionalImages = async () => {
+    if (!additionalFiles.length) return
+    try {
+      setUploading(true)
+      setError('')
+      const results = await Promise.all(additionalFiles.map((file) => uploadService.uploadImage(file)))
+      const urls = results.map((result) => result.data?.url).filter(Boolean)
+      if (urls.length !== additionalFiles.length) throw new Error('Sebagian gambar gagal diunggah.')
+      setUploadedImages((current) => [...(current.length ? current : [uploadedImageUrl || imagePreview].filter(Boolean)), ...urls])
+      setAdditionalFiles([])
+      setAdditionalPreviews([])
+      setSuccessMsg(`${urls.length} gambar berhasil ditambahkan.`)
+      setTimeout(() => setSuccessMsg(''), 3000)
+    } catch (err) {
+      setError(err.message || 'Gambar gagal diunggah. Silakan coba lagi.')
     } finally {
       setUploading(false)
     }
@@ -459,19 +497,21 @@ export default function CreateGunPage({ onBack, onSuccess }) {
         <form onSubmit={handleSubmit} className="entry-form">
           {/* Active Image Thumbnail */}
           <div className="selected-thumb-bar">
-            <img src={uploadedImageUrl || imagePreview} alt="Selected" className="thumb-small" />
+            <img src={uploadedImages[0] || uploadedImageUrl || imagePreview} alt="Selected" className="thumb-small" />
             <div className="thumb-info">
-              <span className="thumb-title">Imagery Assigned</span>
-              <span className="thumb-sub">Ready for registration</span>
+              <span className="thumb-title">{uploadedImages.length || 1} gambar katalog</span>
+              <span className="thumb-sub">Tambah beberapa gambar untuk galeri katalog</span>
             </div>
             <button
               type="button"
               className="btn btn--outline btn--sm"
               onClick={() => setCurrentStep('upload')}
             >
-              Change Image
+              Ganti gambar utama
             </button>
           </div>
+          <div className="create-image-gallery">{(uploadedImages.length ? uploadedImages : [uploadedImageUrl || imagePreview].filter(Boolean)).map((url, index) => <div className="edit-image-thumb" key={`${url}-${index}`}><img src={url} alt={`Gambar katalog ${index + 1}`} loading="lazy"/><button type="button" onClick={() => { const current=uploadedImages.length?uploadedImages:[uploadedImageUrl||imagePreview].filter(Boolean);const next=current.filter((_,i)=>i!==index);setUploadedImages(next);setUploadedImageUrl(next[0]||'') }} aria-label={`Hapus gambar ${index+1}`}><X size={14}/></button></div>)}{additionalPreviews.map((url,index)=><div className="edit-image-thumb" key={`${url}-${index}`}><img src={url} alt={`Gambar baru ${index+1}`} loading="lazy"/></div>)}</div>
+          <div className="additional-images-controls"><label className="btn btn--outline btn--sm" htmlFor="create-additional-images"><Plus size={15}/> Add more images</label><input id="create-additional-images" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" multiple onChange={handleAdditionalImageSelect} className="hidden-file-input"/>{additionalFiles.length > 0 && <button type="button" className="btn btn--primary btn--sm" onClick={handleUploadAdditionalImages} disabled={uploading}>{uploading ? 'Uploading…' : `Upload ${additionalFiles.length} images`}</button>}</div>
 
           {/* Core Info */}
           <div className="form-grid">

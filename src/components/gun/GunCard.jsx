@@ -1,6 +1,7 @@
 import FavoriteButton from '../common/FavoriteButton'
 import { ShoppingCart, Share2, ArchiveRestore, Trash2 } from 'lucide-react'
 import { formatPrice, truncate } from '../../utils/helpers'
+import { useState } from 'react'
 
 /**
  * Product card used in the catalog grid.
@@ -12,7 +13,9 @@ import { formatPrice, truncate } from '../../utils/helpers'
  * @param {Function} [props.onDelete]— called when Delete is clicked (admin)
  */
 export default function GunCard({ gun, onSelect, onEdit, onDelete, onCart, archived, onRestore, onPermanentDelete }) {
-  const imgSrc = (gun.images?.[0] || gun.image_url || gun.image || '/guns/pistol.svg')
+  const images = gun.images?.length ? gun.images : [gun.image_url || gun.image || '/guns/pistol.svg']
+  const [activeImage, setActiveImage] = useState(0)
+  const imgSrc = images[activeImage] || images[0]
   const category = gun.type || gun.category || '—'
   const caliber = gun.caliber || gun.difficulty || ''
   const price = gun.price ?? gun.cook_time ?? 0
@@ -47,6 +50,11 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete, onCart, archi
 
         <span className="price">{formatPrice(price)}</span>
       </button>
+
+      {images.length > 1 && <div className="card-image-thumbnails" aria-label={`${images.length} gambar produk`}>
+        {images.slice(0, 5).map((image, index) => <button key={`${image}-${index}`} type="button" className={activeImage === index ? 'is-active' : ''} onClick={(e) => { e.stopPropagation(); setActiveImage(index) }} aria-label={`Tampilkan gambar ${index + 1}`} aria-pressed={activeImage === index}><img src={image} alt="" loading="lazy"/></button>)}
+        {images.length > 5 && <span>+{images.length - 5}</span>}
+      </div>}
 
       {/* Floating actions row */}
       <div className="card-actions">

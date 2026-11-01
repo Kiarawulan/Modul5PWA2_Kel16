@@ -434,6 +434,7 @@
   border-bottom: 1px solid var(--line);
   margin-bottom: 12px;
 }
+.card-image-thumbnails{display:flex;align-items:center;gap:7px;padding:0 14px 12px;overflow:hidden}.card-image-thumbnails button{width:42px;height:36px;flex:0 0 auto;padding:2px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;opacity:.72;transition:opacity .15s,border-color .15s}.card-image-thumbnails button.is-active{border-color:var(--brass);opacity:1;box-shadow:0 0 0 1px var(--brass)}.card-image-thumbnails img{width:100%;height:100%;object-fit:cover;border-radius:3px}.card-image-thumbnails span{font-size:.78rem;color:var(--steel);white-space:nowrap}
 
 .card .name,
 .card .type,
@@ -1542,3 +1543,4 @@
 .review-actions button{border:1px solid var(--line);border-radius:8px;background:transparent;padding:6px 10px;cursor:pointer;color:inherit}
 .image-thumbnails img{width:56px;height:48px;object-fit:cover;border-radius:6px}
 .image-thumbnails button{padding:2px;border:1px solid var(--line);background:transparent;border-radius:8px;cursor:pointer}
+.create-image-gallery,.edit-image-gallery{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}.edit-image-thumb{position:relative;width:76px;height:68px}.edit-image-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid var(--line)}.edit-image-thumb button{position:absolute;right:-6px;top:-6px;width:22px;height:22px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--ink);color:var(--paper);cursor:pointer}.additional-images-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}.additional-images-controls label{cursor:pointer}.image-upload-hint{font-size:.82rem;color:var(--steel)}

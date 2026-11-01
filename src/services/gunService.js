@@ -6,6 +6,9 @@ import { apiClient, IS_SUPABASE } from '../config/api'
 // ---------------------------------------------------------------------------
 export const normalizeProduct = (item) => {
   if (!item) return null
+  let localImages = {}
+  try { localImages = JSON.parse(localStorage.getItem('gunshop_product_images') || '{}') } catch { /* storage may be unavailable */ }
+  const savedImages = localImages[String(item.id)]
 
   // Resolve specifications from Supabase `specs` (text array) or API `ingredients`
   let specsList = []
@@ -47,7 +50,9 @@ export const normalizeProduct = (item) => {
     caliber: item.caliber || 'Standard',
     price: Number(item.price ?? item.cook_time ?? 0),
     description: item.description || '',
-    images: Array.isArray(item.images) ? item.images : (item.image_url || item.image ? [item.image_url || item.image] : []),
+    images: Array.isArray(savedImages) && savedImages.length
+      ? savedImages
+      : Array.isArray(item.images) ? item.images : (item.image_url || item.image ? [item.image_url || item.image] : []),
     image_url: item.image_url || item.image || item.images?.[0] || '/guns/pistol.svg',
     image: item.image_url || item.image || '/guns/pistol.svg',
     ingredients: specsList,
